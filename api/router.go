@@ -1,16 +1,29 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/your-username/onboarding/auth"
 )
 
+func Default() gin.HandlerFunc {
+	config := cors.Config{
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}
+	config.AllowAllOrigins = true
+	return cors.New(config)
+}
+
 // SetupRouter configures the routes for the application.
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
-	router.Use(cors.Default()) // Enable CORS for all routes
+	router.Use(Default())
 
 	// --- Public Routes ---
 	// No authentication required for these.

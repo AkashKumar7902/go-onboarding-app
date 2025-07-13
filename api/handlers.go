@@ -80,7 +80,6 @@ func GetUsersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-
 // LoginHandler handles user login and returns a JWT.
 func LoginHandler(c *gin.Context) {
 	var creds struct {
@@ -92,12 +91,33 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	token, err := services.LoginUser(creds.Username, creds.Password)
+	token, user, err := services.LoginUser(creds.Username, creds.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+
+	var tenant models.Tenant
+	var tenantsCollection = db.GetCollection("tenants")
+	tenantObjID, _ := primitive.ObjectIDFromHex(user.TenantID)
+	err = tenantsCollection.FindOne(c.Request.Context(), bson.M{"_id": tenantObjID}).Decode(&tenant)
+	if err != nil {
+		// This would be a serious internal error if a user exists without a tenant
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve tenant information"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"user": gin.H{
+			"id":       user.ID.Hex(),
+			"username": user.Username,
+			"role":     user.Role,
+		},
+		"tenant": gin.H{
+			"enabledEntities": tenant.EnabledEntities,
+		},
+	})
 }
 
 // --- Protected Handlers (Require JWT) ---
