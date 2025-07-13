@@ -8,6 +8,7 @@ type Tenant struct {
 	Name      string             `bson:"name" json:"name"`           // e.g., "Acme Corporation"
 	Status    string             `bson:"status" json:"status"`       // e.g., "active", "suspended", "trial"
 	CreatedAt primitive.DateTime `bson:"createdAt" json:"createdAt"`
+	EnabledEntities []string           `bson:"enabledEntities" json:"enabledEntities"` // Stores slugs like "locations", "departments", "costs"
 }
 
 // User represents a user who can log in and perform actions within a specific tenant.

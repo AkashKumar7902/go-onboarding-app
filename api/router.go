@@ -29,34 +29,40 @@ func SetupRouter() *gin.Engine {
 	{
 		// Employee CRUD
 		employees := api.Group("/employees")
+		employees.Use(auth.RequireEntityAccess("employees")) 
 		{
 			employees.POST("", CreateEmployeeHandler)
 			employees.GET("", GetEmployeesHandler)
-			// Other employee routes (GET by ID, PUT, DELETE) would go here.
+			employees.GET("/:id", GetEmployeeByIDHandler)
+			employees.PUT("/:id", UpdateEmployeeHandler)
+			employees.DELETE("/:id", DeleteEmployeeHandler)
 		}
 
 		// --- CRUD routes for all dynamic entities ---
 		// Using a helper function to keep this section clean.
-		createEntityRoutes(api, "locations", CreateLocationHandler, GetLocationsHandler)
-		createEntityRoutes(api, "departments", CreateDepartmentHandler, GetDepartmentsHandler)
-		createEntityRoutes(api, "managers", CreateManagersHandler, GetManagersHandler)
-		createEntityRoutes(api, "job-roles", CreateJobRoleHandler, GetJobRolesHandler)
-		createEntityRoutes(api, "employement-types", CreateEmploymentTypeHandler, GetEmploymentTypesHandler)
-		createEntityRoutes(api, "teams", CreateTeamHandler, GetTeamsHandler)
-		createEntityRoutes(api, "costs", CreateCostCenterHandler, GetCostCentersHandler)
-		createEntityRoutes(api, "hardware-assets", CreateHardwareAssetHandler, GetHardwareAssetsHandler)
-		createEntityRoutes(api, "onboarding-buddy", CreateOnboardingBuddyHandler, GetOnboardingBuddiesHandler)
-		createEntityRoutes(api, "access-levels", CreateAccessLevelHandler, GetAccessLevelsHandler)
+		createEntityRoutes(api, "locations", CreateLocationHandler, GetLocationsHandler, GetLocationByIDHandler, UpdateLocationHandler, DeleteLocationHandler)
+		createEntityRoutes(api, "departments", CreateDepartmentHandler, GetDepartmentsHandler, GetDepartmentByIDHandler, UpdateDepartmentHandler, DeleteDepartmentHandler)
+		createEntityRoutes(api, "managers", CreateManagersHandler, GetManagersHandler, GetManagerByIDHandler, UpdateManagerHandler, DeleteManagerHandler)
+		createEntityRoutes(api, "job-roles", CreateJobRoleHandler, GetJobRolesHandler, GetJobRoleByIDHandler, UpdateJobRoleHandler, DeleteJobRoleHandler)
+		createEntityRoutes(api, "employement-types", CreateEmploymentTypeHandler, GetEmploymentTypesHandler, GetEmploymentTypeByIDHandler, UpdateEmploymentTypeHandler, DeleteEmploymentTypeHandler)
+		createEntityRoutes(api, "teams", CreateTeamHandler, GetTeamsHandler, GetTeamByIDHandler, UpdateTeamHandler, DeleteTeamHandler)
+		createEntityRoutes(api, "costs", CreateCostCenterHandler, GetCostCentersHandler, GetCostCenterByIDHandler, UpdateCostCenterHandler, DeleteCostCenterHandler)
+		createEntityRoutes(api, "hardware-assets", CreateHardwareAssetHandler, GetHardwareAssetsHandler, GetHardwareAssetByIDHandler, UpdateHardwareAssetHandler, DeleteAccessLevelHandler)
+		createEntityRoutes(api, "onboarding-buddy", CreateOnboardingBuddyHandler, GetOnboardingBuddiesHandler, GetOnboardingBuddyByIDHandler, UpdateOnboardingBuddyHandler, DeleteOnboardingBuddyHandler)
+		createEntityRoutes(api, "access-levels", CreateAccessLevelHandler, GetAccessLevelsHandler, GetAccessLevelByIDHandler, UpdateAccessLevelHandler, DeleteAccessLevelHandler)
 	}
 	return router
 }
 
 // createEntityRoutes is a helper function to reduce route definition boilerplate.
-func createEntityRoutes(group *gin.RouterGroup, resource string, create gin.HandlerFunc, get gin.HandlerFunc) {
+func createEntityRoutes(group *gin.RouterGroup, resource string, create, getAll, getByID, update, del gin.HandlerFunc) {
 	entityGroup := group.Group(resource)
+	entityGroup.Use(auth.RequireEntityAccess(resource))
 	{
 		entityGroup.POST("", create)
-		entityGroup.GET("", get)
-		// You can add GET by ID, PUT, and DELETE routes/handlers here as well.
+		entityGroup.GET("", getAll)
+		entityGroup.GET("/:id", getByID)
+		entityGroup.PUT("/:id", update)
+		entityGroup.DELETE("/:id", del)
 	}
 }

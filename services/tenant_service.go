@@ -13,9 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var tenantCollection = db.GetCollection("tenants")
-var usersCollection = db.GetCollection("users")
-
 // TenantSignupData holds the information from the public signup form.
 type TenantSignupData struct {
 	CompanyName string `json:"companyName" binding:"required"`
@@ -27,12 +24,28 @@ type TenantSignupData struct {
 // This is an atomic operation: both must succeed, or neither should.
 // In a production system, this should be wrapped in a MongoDB Session (transaction).
 func CreateTenantAndAdminUser(signupData *TenantSignupData) (*models.Tenant, *models.User, error) {
+	var tenantCollection = db.GetCollection("tenants")
+	var usersCollection = db.GetCollection("users")
 	// 1. Create the Tenant
+	defaultEntities := []string{
+		"employees",
+		"locations",
+		"departments",
+		"managers",
+		"job-roles",
+		"employement-types",
+		"teams",
+		"costs",
+		"hardware-assets",
+		"onboarding-buddy",
+		"access-levels",
+	}
 	newTenant := &models.Tenant{
-		ID:        primitive.NewObjectID(),
-		Name:      signupData.CompanyName,
-		Status:    "active",
-		CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
+		ID:              primitive.NewObjectID(),
+		Name:            signupData.CompanyName,
+		Status:          "active",
+		CreatedAt:       primitive.NewDateTimeFromTime(time.Now()),
+		EnabledEntities: defaultEntities,
 	}
 
 	_, err := tenantCollection.InsertOne(context.Background(), newTenant)

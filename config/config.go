@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 )
 
@@ -30,6 +31,8 @@ func LoadConfig() {
 		DatabaseName: getEnv("DATABASE_NAME", "onboarding_db"),
 		JwtSecretKey: getEnv("JWT_SECRET_KEY", "default_secret"),
 	}
+
+	spew.Dump(AppConfig)
 }
 
 // getEnv is a helper function to read an environment variable or return a fallback value.

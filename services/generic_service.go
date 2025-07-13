@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"github.com/your-username/onboarding/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Entity is a constraint that serves as a marker for our generic functions.
@@ -73,4 +75,72 @@ func GetEntitiesByTenant[T Entity](ctx context.Context, collectionName, tenantID
 	}
 
 	return results, nil
+}
+
+// GetEntityByID fetches a single document by its ID, ensuring it belongs to the tenant.
+func GetEntityByID[T Entity](ctx context.Context, collectionName, id, tenantID string) (*T, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.New("invalid id format")
+	}
+
+	collection := db.GetCollection(collectionName)
+	var result T
+
+	filter := bson.M{"_id": objID, "tenantId": tenantID}
+	err = collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("entity not found or does not belong to this tenant")
+		}
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateEntity updates a document in a collection.
+// It uses bson.M for the update data to allow for partial updates (PATCH-like behavior).
+func UpdateEntity[T Entity](ctx context.Context, collectionName, id, tenantID string, updateData bson.M) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.New("invalid id format")
+	}
+
+	collection := db.GetCollection(collectionName)
+	filter := bson.M{"_id": objID, "tenantId": tenantID}
+	update := bson.M{"$set": updateData}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errors.New("entity not found or does not belong to this tenant")
+	}
+
+	return nil
+}
+
+// DeleteEntity deletes a document from a collection.
+func DeleteEntity[T Entity](ctx context.Context, collectionName, id, tenantID string) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.New("invalid id format")
+	}
+
+	collection := db.GetCollection(collectionName)
+	filter := bson.M{"_id": objID, "tenantId": tenantID}
+
+	result, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
+		return errors.New("entity not found or does not belong to this tenant")
+	}
+
+	return nil
 }

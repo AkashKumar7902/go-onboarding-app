@@ -37,7 +37,5 @@ func InitDB() {
 
 // GetCollection is a helper function to get a handle for a collection from the database.
 func GetCollection(collectionName string) *mongo.Collection {
-	println("Getting database", config.AppConfig.DatabaseName)
-	println("Getting collection:", collectionName)
 	return MongoClient.Database(config.AppConfig.DatabaseName).Collection(collectionName)
 }

@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/your-username/onboarding/config"
+	"github.com/your-username/onboarding/db"
+	"github.com/your-username/onboarding/models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Claims defines the structure of the data we'll store in the JWT payload.
@@ -74,6 +78,48 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("userId", claims.UserID)
 
 		// 4. Call the next handler in the chain.
+		c.Next()
+	}
+}
+
+// RequireEntityAccess is a middleware factory. It returns a Gin handler that
+// checks if the current tenant has permission to access the specified entity.
+func RequireEntityAccess(entitySlug string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 1. Get the tenantId from the context (set by the AuthMiddleware).
+		tenantIDStr := c.GetString("tenantId")
+		tenantID, _ := primitive.ObjectIDFromHex(tenantIDStr)
+
+		// 2. Fetch the tenant's data from the database.
+		// NOTE: In a high-performance production system, you would cache this information
+		// after login instead of querying the DB on every request.
+		var tenant models.Tenant
+		tenantCollection := db.GetCollection("tenants")
+		err := tenantCollection.FindOne(c.Request.Context(), bson.M{"_id": tenantID}).Decode(&tenant)
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Could not verify tenant permissions"})
+			return
+		}
+
+		// 3. Check if the required entitySlug is in the tenant's list.
+		isAllowed := false
+		for _, enabledEntity := range tenant.EnabledEntities {
+			if enabledEntity == entitySlug {
+				isAllowed = true
+				break
+			}
+		}
+
+		// 4. If not allowed, block the request with a 403 Forbidden error.
+		if !isAllowed {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "Access to this feature is not enabled for your account.",
+			})
+			return
+		}
+
+		// 5. If allowed, proceed to the actual handler.
 		c.Next()
 	}
 }

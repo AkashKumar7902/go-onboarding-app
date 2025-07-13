@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/your-username/onboarding/auth"
+	"github.com/your-username/onboarding/db"
 	"github.com/your-username/onboarding/models"
 	"github.com/your-username/onboarding/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,6 +13,8 @@ import (
 
 // LoginUser verifies a user's credentials and returns a JWT on success.
 func LoginUser(username, password string) (string, error) {
+	var usersCollection = db.GetCollection("users")
+
 	var user models.User
 	err := usersCollection.FindOne(context.Background(), bson.M{"username": username}).Decode(&user)
 	if err != nil {

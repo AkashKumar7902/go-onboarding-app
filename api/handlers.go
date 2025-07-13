@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/your-username/onboarding/models"
 	"github.com/your-username/onboarding/services"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Public Handlers ---
@@ -83,6 +84,43 @@ func GetEmployeesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, employees)
 }
 
+func GetEmployeeByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	employee, err := services.GetEmployeeByID(id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+		return
+	}
+	c.JSON(http.StatusOK, employee)
+}
+
+func UpdateEmployeeHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := services.UpdateEmployee(id, tenantID, updateData); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Employee updated successfully"})
+}
+
+func DeleteEmployeeHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	if err := services.DeleteEmployee(id, tenantID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Employee deleted successfully"})
+}
+
 // --- Dynamic Entity Handlers ---
 // The pattern for all dynamic entities is the same. We define a few here as examples.
 
@@ -113,6 +151,45 @@ func GetLocationsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, entities)
 }
 
+func GetLocationByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.Location](c.Request.Context(), "locations", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Location not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateLocationHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.Location](c.Request.Context(), "locations", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Location updated successfully"})
+}
+
+func DeleteLocationHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.Location](c.Request.Context(), "locations", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Location deleted successfully"})
+}
+
 // Department Handlers
 func CreateDepartmentHandler(c *gin.Context) {
 	var entity models.Department
@@ -137,6 +214,45 @@ func GetDepartmentsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entities)
+}
+
+func GetDepartmentByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.Department](c.Request.Context(), "departments", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Department not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateDepartmentHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.Department](c.Request.Context(), "departments", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Department updated successfully"})
+}
+
+func DeleteDepartmentHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.Department](c.Request.Context(), "departments", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Department deleted successfully"})
 }
 
 // Managers Handlers
@@ -165,6 +281,45 @@ func GetManagersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, entities)
 }
 
+func GetManagerByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.Manager](c.Request.Context(), "managers", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Manager not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateManagerHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.Manager](c.Request.Context(), "managers", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Manager updated successfully"})
+}
+
+func DeleteManagerHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.Manager](c.Request.Context(), "managers", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Manager deleted successfully"})
+}
+
 // JobRole Handlers
 func CreateJobRoleHandler(c *gin.Context) {
 	var entity models.JobRole
@@ -189,6 +344,45 @@ func GetJobRolesHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entities)
+}
+
+func GetJobRoleByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.JobRole](c.Request.Context(), "job_roles", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Job role not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateJobRoleHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.JobRole](c.Request.Context(), "job_roles", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Job role updated successfully"})
+}
+
+func DeleteJobRoleHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.JobRole](c.Request.Context(), "job_roles", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Job role deleted successfully"})
 }
 
 // EmploymentType Handlers
@@ -217,6 +411,45 @@ func GetEmploymentTypesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, entities)
 }
 
+func GetEmploymentTypeByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.EmploymentType](c.Request.Context(), "employment_types", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Employment type not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateEmploymentTypeHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.EmploymentType](c.Request.Context(), "employment_types", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Employment type updated successfully"})
+}
+
+func DeleteEmploymentTypeHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.EmploymentType](c.Request.Context(), "employment_types", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Employment type deleted successfully"})
+}
+
 // Team Handlers
 func CreateTeamHandler(c *gin.Context) {
 	var entity models.Team
@@ -241,6 +474,45 @@ func GetTeamsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entities)
+}
+
+func GetTeamByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.Team](c.Request.Context(), "teams", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateTeamHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.Team](c.Request.Context(), "teams", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Team updated successfully"})
+}
+
+func DeleteTeamHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.Team](c.Request.Context(), "teams", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
 }
 
 // Cost Center Handlers
@@ -269,6 +541,45 @@ func GetCostCentersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, entities)
 }
 
+func GetCostCenterByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.CostCenter](c.Request.Context(), "cost_centers", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cost center not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateCostCenterHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.CostCenter](c.Request.Context(), "cost_centers", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Cost center updated successfully"})
+}
+
+func DeleteCostCenterHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.CostCenter](c.Request.Context(), "cost_centers", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Cost center deleted successfully"})
+}
+
 // Hardware Asset Handlers
 func CreateHardwareAssetHandler(c *gin.Context) {
 	var entity models.HardwareAsset
@@ -293,6 +604,45 @@ func GetHardwareAssetsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entities)
+}
+
+func GetHardwareAssetByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.HardwareAsset](c.Request.Context(), "hardware_assets", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Hardware asset not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateHardwareAssetHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.HardwareAsset](c.Request.Context(), "hardware_assets", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Hardware asset updated successfully"})
+}
+
+func DeleteHardwareAssetHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.HardwareAsset](c.Request.Context(), "hardware_assets", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Hardware asset deleted successfully"})
 }
 
 // Onboarding Buddy Handlers
@@ -321,6 +671,45 @@ func GetOnboardingBuddiesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, entities)
 }
 
+func GetOnboardingBuddyByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.OnboardingBuddy](c.Request.Context(), "onboarding_buddies", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Onboarding buddy not found"})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateOnboardingBuddyHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.OnboardingBuddy](c.Request.Context(), "onboarding_buddies", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Onboarding buddy updated successfully"})
+}
+
+func DeleteOnboardingBuddyHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.OnboardingBuddy](c.Request.Context(), "onboarding_buddies", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Onboarding buddy deleted successfully"})
+}
+
 // Access Level Handlers
 func CreateAccessLevelHandler(c *gin.Context) {
 	var entity models.AccessLevel
@@ -345,4 +734,43 @@ func GetAccessLevelsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entities)
+}
+
+func GetAccessLevelByIDHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	entity, err := services.GetEntityByID[models.AccessLevel](c.Request.Context(), "access_levels", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, entity)
+}
+
+func UpdateAccessLevelHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	var updateData bson.M
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := services.UpdateEntity[models.AccessLevel](c.Request.Context(), "access_levels", id, tenantID, updateData)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Access level updated successfully"})
+}
+
+func DeleteAccessLevelHandler(c *gin.Context) {
+	id := c.Param("id")
+	tenantID := c.GetString("tenantId")
+	err := services.DeleteEntity[models.AccessLevel](c.Request.Context(), "access_levels", id, tenantID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Access level deleted successfully"})
 }
