@@ -1,0 +1,2224 @@
+openapi: 3.0.3
+info:
+  title: Employee Onboarding API
+  description: |
+    A multi-tenant employee onboarding system that allows organizations to manage employees, 
+    locations, departments, managers, job roles, and other onboarding-related entities.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    `Authorization: Bearer <token>`
+    
+    ## Multi-tenancy
+    The system supports multiple tenants (organizations). Each tenant has isolated data
+    and users can only access data within their tenant.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Public Routes
+  /public/signup:
+    post:
+      tags:
+        - Public
+      summary: Create new tenant and admin user
+      description: Register a new organization (tenant) and create the first admin user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSignupRequest'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSignupResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Authentication Routes
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Management Routes
+  /api/v1/users:
+    post:
+      tags:
+        - Users
+      summary: Create new user
+      description: Create a new user within the current tenant (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Get all users within the current tenant
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Employee Routes
+  /api/v1/employees:
+    post:
+      tags:
+        - Employees
+      summary: Create new employee
+      description: Create a new employee record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+      responses:
+        '201':
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Employees
+      summary: Get all employees
+      description: Get all employees within the current tenant
+      responses:
+        '200':
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/employees/{id}:
+    get:
+      tags:
+        - Employees
+      summary: Get employee by ID
+      description: Get a specific employee by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employee ID
+      responses:
+        '200':
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Employees
+      summary: Update employee
+      description: Update an existing employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employee ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial employee update data
+      responses:
+        '200':
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Employees
+      summary: Delete employee
+      description: Delete an employee record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employee ID
+      responses:
+        '200':
+          description: Employee deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Location Routes
+  /api/v1/locations:
+    post:
+      tags:
+        - Locations
+      summary: Create new location
+      description: Create a new location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+      responses:
+        '201':
+          description: Location created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Locations
+      summary: Get all locations
+      description: Get all locations within the current tenant
+      responses:
+        '200':
+          description: List of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Location'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/locations/{id}:
+    get:
+      tags:
+        - Locations
+      summary: Get location by ID
+      description: Get a specific location by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      responses:
+        '200':
+          description: Location details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Locations
+      summary: Update location
+      description: Update an existing location
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial location update data
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Locations
+      summary: Delete location
+      description: Delete a location record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      responses:
+        '200':
+          description: Location deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Department Routes
+  /api/v1/departments:
+    post:
+      tags:
+        - Departments
+      summary: Create new department
+      description: Create a new department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+      responses:
+        '201':
+          description: Department created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Departments
+      summary: Get all departments
+      description: Get all departments within the current tenant
+      responses:
+        '200':
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Department'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/departments/{id}:
+    get:
+      tags:
+        - Departments
+      summary: Get department by ID
+      description: Get a specific department by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department ID
+      responses:
+        '200':
+          description: Department details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '404':
+          description: Department not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Departments
+      summary: Update department
+      description: Update an existing department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial department update data
+      responses:
+        '200':
+          description: Department updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Department not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Departments
+      summary: Delete department
+      description: Delete a department record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department ID
+      responses:
+        '200':
+          description: Department deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Department not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Manager Routes
+  /api/v1/managers:
+    post:
+      tags:
+        - Managers
+      summary: Create new manager
+      description: Create a new manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Manager'
+      responses:
+        '201':
+          description: Manager created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manager'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Managers
+      summary: Get all managers
+      description: Get all managers within the current tenant
+      responses:
+        '200':
+          description: List of managers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Manager'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/managers/{id}:
+    get:
+      tags:
+        - Managers
+      summary: Get manager by ID
+      description: Get a specific manager by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Manager ID
+      responses:
+        '200':
+          description: Manager details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manager'
+        '404':
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Managers
+      summary: Update manager
+      description: Update an existing manager
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Manager ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial manager update data
+      responses:
+        '200':
+          description: Manager updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Managers
+      summary: Delete manager
+      description: Delete a manager record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Manager ID
+      responses:
+        '200':
+          description: Manager deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Manager not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Job Role Routes
+  /api/v1/job-roles:
+    post:
+      tags:
+        - Job Roles
+      summary: Create new job role
+      description: Create a new job role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRole'
+      responses:
+        '201':
+          description: Job role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRole'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Job Roles
+      summary: Get all job roles
+      description: Get all job roles within the current tenant
+      responses:
+        '200':
+          description: List of job roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobRole'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/job-roles/{id}:
+    get:
+      tags:
+        - Job Roles
+      summary: Get job role by ID
+      description: Get a specific job role by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Job role ID
+      responses:
+        '200':
+          description: Job role details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRole'
+        '404':
+          description: Job role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Job Roles
+      summary: Update job role
+      description: Update an existing job role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Job role ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial job role update data
+      responses:
+        '200':
+          description: Job role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Job role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Job Roles
+      summary: Delete job role
+      description: Delete a job role record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Job role ID
+      responses:
+        '200':
+          description: Job role deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Job role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Employment Type Routes
+  /api/v1/employement-types:
+    post:
+      tags:
+        - Employment Types
+      summary: Create new employment type
+      description: Create a new employment type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmploymentType'
+      responses:
+        '201':
+          description: Employment type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmploymentType'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Employment Types
+      summary: Get all employment types
+      description: Get all employment types within the current tenant
+      responses:
+        '200':
+          description: List of employment types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmploymentType'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/employement-types/{id}:
+    get:
+      tags:
+        - Employment Types
+      summary: Get employment type by ID
+      description: Get a specific employment type by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employment type ID
+      responses:
+        '200':
+          description: Employment type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmploymentType'
+        '404':
+          description: Employment type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Employment Types
+      summary: Update employment type
+      description: Update an existing employment type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employment type ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial employment type update data
+      responses:
+        '200':
+          description: Employment type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employment type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Employment Types
+      summary: Delete employment type
+      description: Delete an employment type record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Employment type ID
+      responses:
+        '200':
+          description: Employment type deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Employment type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Team Routes
+  /api/v1/teams:
+    post:
+      tags:
+        - Teams
+      summary: Create new team
+      description: Create a new team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        '201':
+          description: Team created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Teams
+      summary: Get all teams
+      description: Get all teams within the current tenant
+      responses:
+        '200':
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/teams/{id}:
+    get:
+      tags:
+        - Teams
+      summary: Get team by ID
+      description: Get a specific team by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Team ID
+      responses:
+        '200':
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '404':
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Teams
+      summary: Update team
+      description: Update an existing team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Team ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial team update data
+      responses:
+        '200':
+          description: Team updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Teams
+      summary: Delete team
+      description: Delete a team record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Team ID
+      responses:
+        '200':
+          description: Team deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Cost Center Routes
+  /api/v1/costs:
+    post:
+      tags:
+        - Cost Centers
+      summary: Create new cost center
+      description: Create a new cost center
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCenter'
+      responses:
+        '201':
+          description: Cost center created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostCenter'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Cost Centers
+      summary: Get all cost centers
+      description: Get all cost centers within the current tenant
+      responses:
+        '200':
+          description: List of cost centers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CostCenter'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/costs/{id}:
+    get:
+      tags:
+        - Cost Centers
+      summary: Get cost center by ID
+      description: Get a specific cost center by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Cost center ID
+      responses:
+        '200':
+          description: Cost center details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostCenter'
+        '404':
+          description: Cost center not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Cost Centers
+      summary: Update cost center
+      description: Update an existing cost center
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Cost center ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial cost center update data
+      responses:
+        '200':
+          description: Cost center updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cost center not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Cost Centers
+      summary: Delete cost center
+      description: Delete a cost center record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Cost center ID
+      responses:
+        '200':
+          description: Cost center deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Cost center not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Hardware Asset Routes
+  /api/v1/hardware-assets:
+    post:
+      tags:
+        - Hardware Assets
+      summary: Create new hardware asset
+      description: Create a new hardware asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HardwareAsset'
+      responses:
+        '201':
+          description: Hardware asset created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HardwareAsset'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Hardware Assets
+      summary: Get all hardware assets
+      description: Get all hardware assets within the current tenant
+      responses:
+        '200':
+          description: List of hardware assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HardwareAsset'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hardware-assets/{id}:
+    get:
+      tags:
+        - Hardware Assets
+      summary: Get hardware asset by ID
+      description: Get a specific hardware asset by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hardware asset ID
+      responses:
+        '200':
+          description: Hardware asset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HardwareAsset'
+        '404':
+          description: Hardware asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Hardware Assets
+      summary: Update hardware asset
+      description: Update an existing hardware asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hardware asset ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial hardware asset update data
+      responses:
+        '200':
+          description: Hardware asset updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Hardware asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Hardware Assets
+      summary: Delete hardware asset
+      description: Delete a hardware asset record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hardware asset ID
+      responses:
+        '200':
+          description: Hardware asset deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Hardware asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Onboarding Buddy Routes
+  /api/v1/onboarding-buddy:
+    post:
+      tags:
+        - Onboarding Buddies
+      summary: Create new onboarding buddy
+      description: Create a new onboarding buddy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingBuddy'
+      responses:
+        '201':
+          description: Onboarding buddy created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingBuddy'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Onboarding Buddies
+      summary: Get all onboarding buddies
+      description: Get all onboarding buddies within the current tenant
+      responses:
+        '200':
+          description: List of onboarding buddies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingBuddy'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/onboarding-buddy/{id}:
+    get:
+      tags:
+        - Onboarding Buddies
+      summary: Get onboarding buddy by ID
+      description: Get a specific onboarding buddy by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Onboarding buddy ID
+      responses:
+        '200':
+          description: Onboarding buddy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingBuddy'
+        '404':
+          description: Onboarding buddy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Onboarding Buddies
+      summary: Update onboarding buddy
+      description: Update an existing onboarding buddy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Onboarding buddy ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial onboarding buddy update data
+      responses:
+        '200':
+          description: Onboarding buddy updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Onboarding buddy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Onboarding Buddies
+      summary: Delete onboarding buddy
+      description: Delete an onboarding buddy record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Onboarding buddy ID
+      responses:
+        '200':
+          description: Onboarding buddy deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Onboarding buddy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Access Level Routes
+  /api/v1/access-levels:
+    post:
+      tags:
+        - Access Levels
+      summary: Create new access level
+      description: Create a new access level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessLevel'
+      responses:
+        '201':
+          description: Access level created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLevel'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Access Levels
+      summary: Get all access levels
+      description: Get all access levels within the current tenant
+      responses:
+        '200':
+          description: List of access levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessLevel'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/access-levels/{id}:
+    get:
+      tags:
+        - Access Levels
+      summary: Get access level by ID
+      description: Get a specific access level by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Access level ID
+      responses:
+        '200':
+          description: Access level details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLevel'
+        '404':
+          description: Access level not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Access Levels
+      summary: Update access level
+      description: Update an existing access level
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Access level ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial access level update data
+      responses:
+        '200':
+          description: Access level updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Access level not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Access Levels
+      summary: Delete access level
+      description: Delete an access level record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Access level ID
+      responses:
+        '200':
+          description: Access level deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Access level not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the login endpoint
+
+  schemas:
+    # Request/Response Schemas
+    TenantSignupRequest:
+      type: object
+      required:
+        - companyName
+        - username
+        - password
+      properties:
+        companyName:
+          type: string
+          description: Name of the company/organization
+          example: "Acme Corporation"
+        username:
+          type: string
+          description: Username for the admin user
+          example: "admin@acme.com"
+        password:
+          type: string
+          description: Password for the admin user
+          example: "securepassword123"
+
+    TenantSignupResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Account created successfully. Please log in."
+        tenantId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        adminUserId:
+          type: string
+          example: "507f1f77bcf86cd799439012"
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username
+          example: "admin@acme.com"
+        password:
+          type: string
+          description: Password
+          example: "securepassword123"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token for authentication
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "507f1f77bcf86cd799439012"
+            username:
+              type: string
+              example: "admin@acme.com"
+            role:
+              type: string
+              example: "admin"
+        tenant:
+          type: object
+          properties:
+            enabledEntities:
+              type: array
+              items:
+                type: string
+              example: ["employees", "locations", "departments"]
+
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - password
+        - role
+      properties:
+        username:
+          type: string
+          description: Username for the new user
+          example: "user@acme.com"
+        password:
+          type: string
+          description: Password for the new user
+          example: "userpassword123"
+        role:
+          type: string
+          enum: ["admin", "member"]
+          description: Role of the new user
+          example: "member"
+
+    # Entity Schemas
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          description: Tenant name
+          example: "Acme Corporation"
+        status:
+          type: string
+          enum: ["active", "suspended", "trial"]
+          description: Tenant status
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        enabledEntities:
+          type: array
+          items:
+            type: string
+          description: List of enabled entity types
+          example: ["employees", "locations", "departments"]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439012"
+        username:
+          type: string
+          description: Username
+          example: "admin@acme.com"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+        role:
+          type: string
+          enum: ["admin", "member"]
+          description: User role
+          example: "admin"
+
+    Employee:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - onboardingDate
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439013"
+        firstName:
+          type: string
+          description: Employee first name
+          example: "John"
+        lastName:
+          type: string
+          description: Employee last name
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          description: Employee email address
+          example: "john.doe@acme.com"
+        phoneNumber:
+          type: string
+          description: Employee phone number
+          example: "+1-555-123-4567"
+        onboardingDate:
+          type: string
+          format: date-time
+          description: Employee onboarding date
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+        locationId:
+          type: string
+          description: Associated location ID
+          example: "507f1f77bcf86cd799439014"
+        departmentId:
+          type: string
+          description: Associated department ID
+          example: "507f1f77bcf86cd799439015"
+        managerId:
+          type: string
+          description: Associated manager ID
+          example: "507f1f77bcf86cd799439016"
+        jobRoleId:
+          type: string
+          description: Associated job role ID
+          example: "507f1f77bcf86cd799439017"
+        employmentTypeId:
+          type: string
+          description: Associated employment type ID
+          example: "507f1f77bcf86cd799439018"
+        teamId:
+          type: string
+          description: Associated team ID
+          example: "507f1f77bcf86cd799439019"
+        costCenterId:
+          type: string
+          description: Associated cost center ID
+          example: "507f1f77bcf86cd79943901a"
+        hardwareAssetId:
+          type: string
+          description: Associated hardware asset ID
+          example: "507f1f77bcf86cd79943901b"
+        onboardingBuddyId:
+          type: string
+          description: Associated onboarding buddy ID
+          example: "507f1f77bcf86cd79943901c"
+        accessLevelId:
+          type: string
+          description: Associated access level ID
+          example: "507f1f77bcf86cd79943901d"
+
+    Location:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439014"
+        name:
+          type: string
+          description: Location name
+          example: "New York Office"
+        address:
+          type: string
+          description: Location address
+          example: "123 Main St, New York, NY 10001"
+        postalCode:
+          type: string
+          description: Location postal code
+          example: "10001"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    Department:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439015"
+        name:
+          type: string
+          description: Department name
+          example: "Engineering"
+        head:
+          type: string
+          description: Department head name
+          example: "Jane Smith"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    Manager:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439016"
+        name:
+          type: string
+          description: Manager name
+          example: "Bob Johnson"
+        email:
+          type: string
+          format: email
+          description: Manager email
+          example: "bob.johnson@acme.com"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    JobRole:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439017"
+        name:
+          type: string
+          description: Job role name
+          example: "Software Engineer"
+        description:
+          type: string
+          description: Job role description
+          example: "Responsible for developing and maintaining software applications"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    EmploymentType:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439018"
+        name:
+          type: string
+          description: Employment type name
+          example: "Full-Time"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    Team:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439019"
+        name:
+          type: string
+          description: Team name
+          example: "Frontend Team"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    CostCenter:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd79943901a"
+        name:
+          type: string
+          description: Cost center name
+          example: "Engineering Operations"
+        code:
+          type: string
+          description: Cost center code
+          example: "ENG-101"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    HardwareAsset:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd79943901b"
+        name:
+          type: string
+          description: Hardware asset name
+          example: "MacBook Pro 16 Inch"
+        modelNumber:
+          type: string
+          description: Hardware asset model number
+          example: "MBP16-2023"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    OnboardingBuddy:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd79943901c"
+        name:
+          type: string
+          description: Onboarding buddy name
+          example: "Alice Cooper"
+        teamId:
+          type: string
+          description: Associated team ID
+          example: "507f1f77bcf86cd799439019"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    AccessLevel:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd79943901d"
+        name:
+          type: string
+          description: Access level name
+          example: "Standard User"
+        tenantId:
+          type: string
+          description: Associated tenant ID
+          example: "507f1f77bcf86cd799439011"
+
+    # Common Response Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: "Operation completed successfully"
+
+tags:
+  - name: Public
+    description: Public endpoints that don't require authentication
+  - name: Authentication
+    description: Authentication related endpoints
+  - name: Users
+    description: User management endpoints
+  - name: Employees
+    description: Employee management endpoints
+  - name: Locations
+    description: Location management endpoints
+  - name: Departments
+    description: Department management endpoints
+  - name: Managers
+    description: Manager management endpoints
+  - name: Job Roles
+    description: Job role management endpoints
+  - name: Employment Types
+    description: Employment type management endpoints
+  - name: Teams
+    description: Team management endpoints
+  - name: Cost Centers
+    description: Cost center management endpoints
+  - name: Hardware Assets
+    description: Hardware asset management endpoints
+  - name: Onboarding Buddies
+    description: Onboarding buddy management endpoints
+  - name: Access Levels
+    description: Access level management endpoints 
