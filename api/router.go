@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/your-username/onboarding/auth"
 )
@@ -8,6 +9,8 @@ import (
 // SetupRouter configures the routes for the application.
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
+
+	router.Use(cors.Default()) // Enable CORS for all routes
 
 	// --- Public Routes ---
 	// No authentication required for these.
@@ -29,13 +32,19 @@ func SetupRouter() *gin.Engine {
 	{
 		// Employee CRUD
 		employees := api.Group("/employees")
-		employees.Use(auth.RequireEntityAccess("employees")) 
+		employees.Use(auth.RequireEntityAccess("employees"))
 		{
 			employees.POST("", CreateEmployeeHandler)
 			employees.GET("", GetEmployeesHandler)
 			employees.GET("/:id", GetEmployeeByIDHandler)
 			employees.PUT("/:id", UpdateEmployeeHandler)
 			employees.DELETE("/:id", DeleteEmployeeHandler)
+		}
+
+		users := api.Group("/users")
+		{
+			users.POST("", CreateUserHandler)
+			users.GET("", GetUsersHandler)
 		}
 
 		// --- CRUD routes for all dynamic entities ---

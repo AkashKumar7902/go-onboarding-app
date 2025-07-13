@@ -67,6 +67,7 @@ func CreateTenantAndAdminUser(signupData *TenantSignupData) (*models.Tenant, *mo
 		Password: hashedPassword,
 		// CRUCIAL: Assign the new tenant's ID (as a hex string) to this user.
 		TenantID: newTenant.ID.Hex(),
+		Role:     "admin",
 	}
 
 	_, err = usersCollection.InsertOne(context.Background(), adminUser)

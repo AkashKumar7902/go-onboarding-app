@@ -4,10 +4,10 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 // Tenant represents a customer organization, the top-level entity in our multitenant design.
 type Tenant struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name      string             `bson:"name" json:"name"`           // e.g., "Acme Corporation"
-	Status    string             `bson:"status" json:"status"`       // e.g., "active", "suspended", "trial"
-	CreatedAt primitive.DateTime `bson:"createdAt" json:"createdAt"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name            string             `bson:"name" json:"name"`     // e.g., "Acme Corporation"
+	Status          string             `bson:"status" json:"status"` // e.g., "active", "suspended", "trial"
+	CreatedAt       primitive.DateTime `bson:"createdAt" json:"createdAt"`
 	EnabledEntities []string           `bson:"enabledEntities" json:"enabledEntities"` // Stores slugs like "locations", "departments", "costs"
 }
 
@@ -17,6 +17,7 @@ type User struct {
 	Username string             `bson:"username" json:"username"`
 	Password string             `bson:"password" json:"-"` // Omit password from JSON responses for security.
 	TenantID string             `bson:"tenantId" json:"tenantId"`
+	Role     string             `bson:"role" json:"role"` // e.g., "admin", "member"
 }
 
 // --- Base and Specific Entity Structs ---
@@ -80,7 +81,7 @@ type HardwareAsset struct {
 
 // 9. OnboardingBuddy is a peer assigned to help a new hire.
 type OnboardingBuddy struct {
-	BaseEntity `bson:",inline"` // Name is the buddy's full name
+	BaseEntity `bson:",inline"`   // Name is the buddy's full name
 	TeamID     primitive.ObjectID `bson:"teamId,omitempty" json:"teamId,omitempty"` // Optional reference to the buddy's team
 }
 
@@ -88,7 +89,6 @@ type OnboardingBuddy struct {
 type AccessLevel struct {
 	BaseEntity `bson:",inline"` // e.g., "Standard User", "Admin", "Restricted"
 }
-
 
 // --- The Core Employee Struct ---
 
@@ -116,4 +116,3 @@ type Employee struct {
 	OnboardingBuddyID primitive.ObjectID `bson:"onboardingBuddyId" json:"onboardingBuddyId"`
 	AccessLevelID     primitive.ObjectID `bson:"accessLevelId" json:"accessLevelId"`
 }
-

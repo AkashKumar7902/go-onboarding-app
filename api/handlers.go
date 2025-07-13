@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/your-username/onboarding/db"
 	"github.com/your-username/onboarding/models"
 	"github.com/your-username/onboarding/services"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // --- Public Handlers ---
@@ -33,6 +35,51 @@ func TenantSignupHandler(c *gin.Context) {
 }
 
 // --- Auth Handlers ---
+
+// CreateUserHandler handles the creation of a new user by a tenant admin.
+func CreateUserHandler(c *gin.Context) {
+	// 1. Get the ID of the user MAKING the request from the JWT context.
+	creatorUserID := c.GetString("userId")
+	creatorTenantID := c.GetString("tenantId")
+
+	// 2. Check if the creator is an admin.
+	var creatorUser models.User
+	creatorObjID, _ := primitive.ObjectIDFromHex(creatorUserID)
+	var usersCollection = db.GetCollection("users")
+	err := usersCollection.FindOne(c.Request.Context(), bson.M{"_id": creatorObjID}).Decode(&creatorUser)
+	if err != nil || creatorUser.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admins can create new users."})
+		return
+	}
+
+	// 3. If they are an admin, process the new user's data.
+	var newUserData services.CreateUserData
+	if err := c.ShouldBindJSON(&newUserData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 4. Call the service to create the new user within the same tenant.
+	createdUser, err := services.CreateUserForTenant(&newUserData, creatorTenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, createdUser)
+}
+
+// GetUsersHandler lists all users for the current tenant.
+func GetUsersHandler(c *gin.Context) {
+	tenantID := c.GetString("tenantId")
+	users, err := services.GetUsersByTenant(tenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+	c.JSON(http.StatusOK, users)
+}
+
 
 // LoginHandler handles user login and returns a JWT.
 func LoginHandler(c *gin.Context) {
