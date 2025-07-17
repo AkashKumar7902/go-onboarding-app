@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/your-username/onboarding/db"
@@ -121,21 +122,187 @@ func LoginHandler(c *gin.Context) {
 }
 
 // --- Protected Handlers (Require JWT) ---
-
-// Employee Handlers
 func CreateEmployeeHandler(c *gin.Context) {
-	var employee models.Employee
-	if err := c.ShouldBindJSON(&employee); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// --- 1. Fetch Tenant Permissions ---
+	tenantID := c.GetString("tenantId")
+	tenantObjID, _ := primitive.ObjectIDFromHex(tenantID)
+	var tenant models.Tenant
+	err := db.GetCollection("tenants").FindOne(c.Request.Context(), bson.M{"_id": tenantObjID}).Decode(&tenant)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify tenant permissions"})
 		return
 	}
 
-	// Set tenantID from the JWT claims, which were placed in the context by the middleware.
-	employee.TenantID = c.GetString("tenantId")
+	// --- 2. Bind to a flexible map for validation ---
+	var employeeData map[string]interface{}
+	if err := c.ShouldBindJSON(&employeeData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	// --- 3. Dynamic Validation Logic ---
+	// This map defines which employee fields are tied to which tenant entity permissions.
+	requiredFieldsMap := map[string]string{
+		"locations":          "locationId",
+		"departments":        "departmentId",
+		"managers":           "managerId",
+		"job-roles":          "jobRoleId",
+		"employment-types":   "employmentTypeId",
+		"teams":              "teamId",
+		"cost-centers":       "costCenterId",
+		"hardware-assets":    "hardwareAssetId",
+		"onboarding-buddies": "onboardingBuddyId",
+		"access-levels":      "accessLevelId",
+	}
+
+	var missingFields []string
+	// Check for fundamental fields first
+	if _, ok := employeeData["firstName"]; !ok || employeeData["firstName"] == "" {
+		missingFields = append(missingFields, "firstName")
+	}
+	if _, ok := employeeData["lastName"]; !ok || employeeData["lastName"] == "" {
+		missingFields = append(missingFields, "lastName")
+	}
+	if _, ok := employeeData["email"]; !ok || employeeData["email"] == "" {
+		missingFields = append(missingFields, "email")
+	}
+
+	// Now, check for dynamic fields based on tenant permissions
+	for _, enabledEntity := range tenant.EnabledEntities {
+		if fieldName, isRequired := requiredFieldsMap[enabledEntity]; isRequired {
+			// Check if the required field is present and not empty in the payload
+			if val, ok := employeeData[fieldName]; !ok || val == "" {
+				missingFields = append(missingFields, fieldName)
+			}
+		}
+	}
+
+	// --- 4. Return Detailed Errors if Validation Fails ---
+	if len(missingFields) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":          "Missing required fields for your plan",
+			"missing_fields": missingFields,
+		})
+		return
+	}
+
+	// --- 5. If Validation Passes, Populate the Struct and Create ---
+	// We can now safely create the employee struct
+	var employee models.Employee
+	// This is a simple way to map, for more complex scenarios a library like 'mapstructure' could be used.
+	employee.FirstName = employeeData["firstName"].(string)
+	employee.LastName = employeeData["lastName"].(string)
+	employee.Email = employeeData["email"].(string)
+
+	if val, ok := employeeData["phoneNumber"]; ok {
+		employee.PhoneNumber = val.(string)
+	} else {
+		employee.PhoneNumber = "" // Default to empty if not provided
+	}
+	if val, ok := employeeData["onboardingDate"]; ok {
+		if dateStr, ok := val.(string); ok {
+			// Parse the date string into a primitive.DateTime
+			parsedTime, err := time.Parse(time.RFC3339, dateStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid onboarding date format. Use RFC3339 format (e.g. 2006-01-02T15:04:05Z)"})
+				return
+			}
+			employee.OnboardingDate = primitive.NewDateTimeFromTime(parsedTime)
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "onboardingDate must be a string"})
+			return
+		}
+	} else {
+		employee.OnboardingDate = primitive.NewDateTimeFromTime(time.Now()) // Default to now if not provided
+	}
+
+	// Assign optional fields if they exist
+	if val, ok := employeeData["locationId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for locationId"})
+			return
+		}
+		employee.LocationID = id
+	}
+	if val, ok := employeeData["departmentId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for departmentId"})
+			return
+		}
+		employee.DepartmentID = id
+	}
+	if val, ok := employeeData["managerId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for managerId"})
+			return
+		}
+		employee.ManagerID = id
+	}
+	if val, ok := employeeData["jobRoleId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for jobRoleId"})
+			return
+		}
+		employee.JobRoleID = id
+	}
+	if val, ok := employeeData["employmentTypeId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for employmentTypeId"})
+			return
+		}
+		employee.EmploymentTypeID = id
+	}
+	if val, ok := employeeData["teamId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for teamId"})
+			return
+		}
+		employee.TeamID = id
+	}
+	if val, ok := employeeData["costCenterId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for costCenterId"})
+			return
+		}
+		employee.CostCenterID = id
+	}
+	if val, ok := employeeData["hardwareAssetId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for hardwareAssetId"})
+			return
+		}
+		employee.HardwareAssetID = id
+	}
+	if val, ok := employeeData["onboardingBuddyId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for onboardingBuddyId"})
+			return
+		}
+		employee.OnboardingBuddyID = id
+	}
+	if val, ok := employeeData["accessLevelId"]; ok {
+		id, err := primitive.ObjectIDFromHex(val.(string))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid format for accessLevelId"})
+			return
+		}
+		employee.AccessLevelID = id
+	}
+
+	employee.TenantID = tenantID // Set tenantID from the JWT context
 
 	createdEmployee, err := services.CreateEmployee(&employee)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create employee"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create employee: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusCreated, createdEmployee)

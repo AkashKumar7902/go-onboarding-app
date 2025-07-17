@@ -26,7 +26,7 @@ func SetupRouter() *gin.Engine {
 	router.Use(Default())
 
 	// --- Public Routes ---
-	// No authentication required for these.
+	// No authentication required for these.f
 	public := router.Group("/public")
 	{
 		public.POST("/signup", TenantSignupHandler)
