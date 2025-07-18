@@ -69,7 +69,7 @@ func SetupRouter() *gin.Engine {
 		createEntityRoutes(api, "employement-types", CreateEmploymentTypeHandler, GetEmploymentTypesHandler, GetEmploymentTypeByIDHandler, UpdateEmploymentTypeHandler, DeleteEmploymentTypeHandler)
 		createEntityRoutes(api, "teams", CreateTeamHandler, GetTeamsHandler, GetTeamByIDHandler, UpdateTeamHandler, DeleteTeamHandler)
 		createEntityRoutes(api, "costs", CreateCostCenterHandler, GetCostCentersHandler, GetCostCenterByIDHandler, UpdateCostCenterHandler, DeleteCostCenterHandler)
-		createEntityRoutes(api, "hardware-assets", CreateHardwareAssetHandler, GetHardwareAssetsHandler, GetHardwareAssetByIDHandler, UpdateHardwareAssetHandler, DeleteAccessLevelHandler)
+		createEntityRoutes(api, "hardware-assets", CreateHardwareAssetHandler, GetHardwareAssetsHandler, GetHardwareAssetByIDHandler, UpdateHardwareAssetHandler, DeleteHardwareAssetHandler)
 		createEntityRoutes(api, "onboarding-buddy", CreateOnboardingBuddyHandler, GetOnboardingBuddiesHandler, GetOnboardingBuddyByIDHandler, UpdateOnboardingBuddyHandler, DeleteOnboardingBuddyHandler)
 		createEntityRoutes(api, "access-levels", CreateAccessLevelHandler, GetAccessLevelsHandler, GetAccessLevelByIDHandler, UpdateAccessLevelHandler, DeleteAccessLevelHandler)
 	}
